@@ -1,0 +1,95 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="AccessToNonThreadSafeStaticFieldFromInstance" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="nonThreadSafeClasses">
+        <value />
+      </option>
+      <option name="nonThreadSafeTypes" value="" />
+    </inspection_tool>
+    <inspection_tool class="ArrayEquality" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="BooleanMethodIsAlwaysInverted" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CastConflictsWithInstanceof" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CastToIncompatibleInterface" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="ClassCanBeRecord" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="suggestAccessorsRenaming" value="false" />
+    </inspection_tool>
+    <inspection_tool class="CodeBlock2Expr" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="ComparableImplementedButEqualsNotOverridden" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="ConstantAssertCondition" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="FieldAccessedSynchronizedAndUnsynchronized" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="countGettersAndSetters" value="false" />
+    </inspection_tool>
+    <inspection_tool class="GroovyDoubleCheckedLocking" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoreOnVolatileVariables" value="false" />
+    </inspection_tool>
+    <inspection_tool class="GroovySystemRunFinalizersOnExit" enabled="true" level="ERROR" enabled_by_default="true" editorAttributes="ERRORS_ATTRIBUTES" />
+    <inspection_tool class="IllegalDependencyOnInternalPackage" enabled="true" level="WARNING" enabled_by_default="true" editorAttributes="WARNING_ATTRIBUTES" />
+    <inspection_tool class="LoggingSimilarMessage" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="NonSynchronizedMethodOverridesSynchronizedMethod" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="NonThreadSafeLazyInitialization" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="ObjectToString" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="ReturnNull" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="m_reportObjectMethods" value="true" />
+      <option name="m_reportArrayMethods" value="true" />
+      <option name="m_reportCollectionMethods" value="true" />
+      <option name="m_ignorePrivateMethods" value="false" />
+    </inspection_tool>
+    <inspection_tool class="SameParameterValue" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="SpongeInjection" enabled="true" level="ERROR" enabled_by_default="true">
+      <option name="injectableTypesList">
+        <list>
+          <option value="org.spongepowered.api.Game" />
+          <option value="org.spongepowered.api.MinecraftVersion" />
+          <option value="org.spongepowered.api.service.ServiceManager" />
+          <option value="org.spongepowered.api.asset.AssetManager" />
+          <option value="org.spongepowered.api.GameRegistry" />
+          <option value="org.spongepowered.api.world.TeleportHelper" />
+          <option value="org.spongepowered.api.scheduler.Scheduler" />
+          <option value="org.spongepowered.api.command.CommandManager" />
+          <option value="org.spongepowered.api.data.DataManager" />
+          <option value="org.spongepowered.api.config.ConfigManager" />
+          <option value="org.spongepowered.api.data.property.PropertyRegistry" />
+          <option value="org.spongepowered.api.event.CauseStackManager" />
+          <option value="org.spongepowered.api.util.metric.MetricsConfigManager" />
+          <option value="org.spongepowered.api.Platform" />
+          <option value="org.spongepowered.api.plugin.PluginManager" />
+          <option value="org.spongepowered.api.event.EventManager" />
+          <option value="org.spongepowered.api.network.ChannelRegistrar" />
+          <option value="org.slf4j.Logger" />
+          <option value="org.apache.logging.log4j.Logger" />
+          <option value="org.spongepowered.plugin.PluginContainer" />
+          <option value="java.io.File" />
+          <option value="java.nio.file.Path" />
+          <option value="ninja.leaping.configurate.loader.ConfigurationLoader" />
+          <option value="org.spongepowered.configurate.reference.ConfigurationReference" />
+          <option value="org.spongepowered.configurate.loader.ConfigurationLoader" />
+          <option value="ninja.leaping.configurate.objectmapping.GuiceObjectMapperFactory" />
+          <option value="com.google.inject.Injector" />
+          <option value="org.spongepowered.api.plugin.PluginContainer" />
+          <option value="org.spongepowered.api.asset.Asset" />
+          <option value="org.bstats.sponge.MetricsLite2.Factory" />
+          <option value="org.bstats.sponge.Metrics2.Factory" />
+          <option value="dev.faststats.sponge.SpongeMetrics.Factory" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="UnstableApiUsage" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="UnusedReturnValue" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="UsagesOfObsoleteApi" enabled="true" level="TEXT ATTRIBUTES" enabled_by_default="true" editorAttributes="WARNING_ATTRIBUTES" />
+    <inspection_tool class="unused" enabled="false" level="WARNING" enabled_by_default="false" checkParameterExcludingHierarchy="false">
+      <option name="LOCAL_VARIABLE" value="true" />
+      <option name="FIELD" value="true" />
+      <option name="METHOD" value="true" />
+      <option name="CLASS" value="true" />
+      <option name="PARAMETER" value="true" />
+      <option name="REPORT_PARAMETER_FOR_PUBLIC_METHODS" value="true" />
+      <option name="ADD_MAINS_TO_ENTRIES" value="true" />
+      <option name="ADD_APPLET_TO_ENTRIES" value="true" />
+      <option name="ADD_SERVLET_TO_ENTRIES" value="true" />
+      <option name="ADD_NONJAVA_TO_ENTRIES" value="true" />
+      <option name="selected" value="true" />
+      <option name="mixinEntryPoint" value="true" />
+    </inspection_tool>
+  </profile>
+</component>

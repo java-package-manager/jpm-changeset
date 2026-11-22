@@ -1,0 +1,99 @@
+package dev.jpm.changeset;
+
+import dev.jpm.api.client.Results;
+import dev.jpm.api.json.Jsonc;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ChangesetTest {
+    @Test
+    void bumpsVersions() {
+        assertEquals("2.0.0", Bump.MAJOR.apply("1.4.2"));
+        assertEquals("1.5.0", Bump.MINOR.apply("1.4.2"));
+        assertEquals("1.4.3", Bump.PATCH.apply("1.4.2"));
+        assertEquals("0.4.0", Bump.MAJOR.apply("0.3.9"), "below 1.0.0 a breaking change raises the minor version");
+        assertEquals("1.0.1", Bump.PATCH.apply("1.0.0-SNAPSHOT"));
+        assertThrows(ChangesetException.class, () -> Bump.PATCH.apply("1.0"));
+        assertEquals(Bump.MAJOR, Bump.PATCH.max(Bump.MAJOR));
+    }
+
+    @Test
+    void readsAndWritesChangesets() {
+        Changeset c = Changeset.parse("brave-cats", "---\n\"core\": minor\napp: patch\n'core': patch\n---\n\nAdd a cache.\n\nIt is fast.\n");
+        assertEquals(Map.of("core", Bump.MINOR, "app", Bump.PATCH), c.releases());
+        assertEquals("Add a cache.\n\nIt is fast.", c.summary());
+        assertEquals(c, Changeset.parse("brave-cats", c.format()));
+        assertTrue(Changeset.parse("e", "---\n---\n\nNothing to release.\n").releases().isEmpty());
+        assertThrows(ChangesetException.class, () -> Changeset.parse("x", "core: minor\n"));
+        assertThrows(ChangesetException.class, () -> Changeset.parse("x", "---\ncore: huge\n---\n"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Workspace workspace(Path root) throws Exception {
+        Files.writeString(root.resolve("project.jsonc"), "{ \"name\": \"shop\", \"version\": \"1.0.0\", \"workspace\": [\"core\", \"api\", \"app\", \"docs\"] }");
+        for (String m : List.of("core", "api", "app", "docs")) Files.createDirectories(root.resolve(m));
+        Files.writeString(root.resolve("core/project.jsonc"), "{ \"name\": \"core\", \"version\": \"1.2.0\" }");
+        Files.writeString(root.resolve("api/project.jsonc"), "{ \"name\": \"api\" }");
+        Files.writeString(root.resolve("app/project.jsonc"), "{ \"name\": \"app\" }");
+        Files.writeString(root.resolve("docs/project.jsonc"), "{\n  // the docs site\n  \"name\": \"docs\",\n  \"version\": \"0.3.0\"\n}\n");
+        String load = """
+                { "dir": "%s", "name": "shop", "version": "1.0.0", "workspace": true, "modules": [
+                  { "name": "core", "group": "g", "version": "1.2.0", "dir": "%s/core" },
+                  { "name": "api", "group": "g", "version": "1.0.0", "dir": "%s/api",
+                    "dependencies": [{ "key": "workspace:core", "kind": "workspace", "module": "core" }] },
+                  { "name": "app", "version": "1.0.0", "dir": "%s/app" },
+                  { "name": "docs", "version": "0.3.0", "dir": "%s/docs" } ] }
+                """.formatted(root, root, root, root, root);
+        return Workspace.of(Results.project((Map<String, Object>) Jsonc.parse(load)));
+    }
+
+    @Test
+    void plansReleases(@TempDir Path root) throws Exception {
+        Workspace ws = workspace(root);
+        assertEquals(root.resolve("project.jsonc"), ws.module("api").versionFile(), "api inherits the root's version");
+        Plan plan = Plan.of(ws, List.of(
+                Changeset.parse("a", "---\ncore: minor\n---\n\nAdd a cache.\n"),
+                Changeset.parse("b", "---\ncore: patch\n---\n\nFix a leak.\n")));
+        assertEquals(List.of("core", "api", "app"), List.copyOf(plan.releases().keySet()),
+                "api depends on core; app shares api's version, so it is released with it");
+        assertEquals("1.3.0", plan.releases().get("core").newVersion());
+        assertEquals("1.0.1", plan.releases().get("api").newVersion());
+        assertEquals("1.0.1", plan.releases().get("app").newVersion());
+        assertEquals(List.of("core@1.3.0"), plan.releases().get("api").updated());
+        assertEquals("## 1.3.0\n\n### Minor Changes\n\n- Add a cache.\n\n### Patch Changes\n\n- Fix a leak.\n", Plan.entry(plan.releases().get("core")));
+        assertEquals("## 1.0.1\n\n### Patch Changes\n\n- Updated dependencies: core@1.3.0\n", Plan.entry(plan.releases().get("api")));
+        ChangesetException e = assertThrows(ChangesetException.class, () -> Plan.of(ws, List.of(Changeset.parse("c", "---\nweb: patch\n---\n\nx\n"))));
+        assertTrue(e.getMessage().contains("\"web\", which is not a module"), e.getMessage());
+        Plan shared = Plan.of(ws, List.of(Changeset.parse("d", "---\napp: minor\n---\n\nNew page.\n")));
+        assertEquals("1.1.0", shared.releases().get("api").newVersion(), "api shares app's version file");
+    }
+
+    @Test
+    void writesChangelogsAndVersions() {
+        String first = Plan.prepend(null, "core", "## 1.1.0\n\n### Minor Changes\n\n- One.\n");
+        assertEquals("# core\n\n## 1.1.0\n\n### Minor Changes\n\n- One.\n", first);
+        String second = Plan.prepend(first, "core", "## 1.2.0\n\n### Patch Changes\n\n- Two.\n");
+        assertEquals("# core\n\n## 1.2.0\n\n### Patch Changes\n\n- Two.\n\n## 1.1.0\n\n### Minor Changes\n\n- One.\n", second);
+        String manifest = "{\n  // the docs site\n  \"name\": \"docs\",\n  \"version\": \"0.3.0\", // bumped by changesets\n  \"java\": \"21\"\n}\n";
+        assertEquals(manifest.replace("\"0.3.0\"", "\"0.4.0\""), Manifests.withVersion(manifest, "0.4.0"));
+        assertThrows(ChangesetException.class, () -> Manifests.withVersion("{ \"name\": \"x\" }", "1.0.0"));
+    }
+
+    @Test
+    void parsesAddOptions() {
+        Main.AddOptions o = Main.parseAdd(List.of("--module", "core", "--module", "api", "--minor", "-m", "Add a cache."));
+        assertEquals(new Main.AddOptions(List.of("core", "api"), Bump.MINOR, "Add a cache.", false), o);
+        assertThrows(ChangesetException.class, () -> Main.parseAdd(List.of("--minor", "--patch")));
+        assertThrows(ChangesetException.class, () -> Main.parseAdd(List.of("--empty", "--module", "core")));
+        assertThrows(ChangesetException.class, () -> Main.parseAdd(List.of("--loud")));
+    }
+}

@@ -1,0 +1,50 @@
+// jpm-changeset: the `jpm changeset` extension, like changesets for npm.
+// Use it with `jpm add github:java-package-manager/jpm-changeset`.
+{
+  "name": "jpm-changeset",
+  "group": "dev.jpm",
+  "version": "0.1.0",
+  "description": "Versions and changelogs for jpm projects from changeset files, like changesets for npm",
+  "license": "MIT",
+  "url": "https://github.com/java-package-manager/jpm-changeset",
+  "java": "21",
+  "main": "dev.jpm.changeset.Main",
+  "defineClass": "dev.jpm.changeset.BuildConfig",
+  // what IDEs show for `jpm changeset` (jpm's extensions/list), and the check `jpm check` runs
+  "extension": {
+    "description": "Record changes as changeset files, then bump versions, write changelogs and publish",
+    "commands": {
+      "changeset": { "description": "Add a changeset (the same as `jpm changeset add`)" },
+      "changeset add": {
+        "description": "Add a changeset: which modules changed, how much, and a summary",
+        "options": {
+          "--module": { "argument": "name", "description": "A module that changed (repeatable); asked for when left out" },
+          "--major": { "description": "A breaking change" },
+          "--minor": { "description": "A new feature" },
+          "--patch": { "description": "A fix" },
+          "--message": { "argument": "summary", "description": "The summary for the changelog (-m)" },
+          "--empty": { "description": "A changeset that releases nothing, for changes that need none" }
+        }
+      },
+      "changeset status": {
+        "description": "List the pending changesets and the versions they give",
+        "options": {
+          "--since": { "argument": "ref", "description": "The branch changes are compared with (default: origin/main, else main)" },
+          "--check": { "description": "Fail when a changed module has no changeset" }
+        }
+      },
+      "changeset version": { "description": "Apply the changesets: bump versions, write CHANGELOG.md, delete them" },
+      "changeset publish": { "description": "Publish every module whose version has no tag yet with jpm publish, and tag it" }
+    },
+    "checks": {
+      "status": { "description": "every changed module has a changeset", "run": ["status", "--check"] }
+    }
+  },
+  "repositories": ["https://repo.thenextlvl.net/releases"],
+  "runtime": {
+    "dev.jpm:jpm-api": "^0.12.0"
+  },
+  "test": {
+    "org.junit.jupiter:junit-jupiter": "5.11.4"
+  }
+}
