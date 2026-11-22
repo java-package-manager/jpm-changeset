@@ -50,6 +50,19 @@ Review and commit that, then `jpm changeset publish [jpm publish options]` runs
 version has no tag yet, and tags it: `1.3.0` in a project with one module, `core@1.3.0` in a workspace. Push
 the tags with `git push --follow-tags`.
 
+### In GitHub Actions
+
+[changeset-action](https://github.com/java-package-manager/changeset-action) keeps a "Version packages"
+pull request with what `jpm changeset version` changes, and publishes when it is merged:
+
+```yaml
+- uses: actions/checkout@v7
+  with: { fetch-depth: 0 }
+- uses: java-package-manager/setup-jpm@v1
+- uses: java-package-manager/changeset-action@v1
+  with: { publish: true }
+```
+
 ## Prereleases
 
 `jpm changeset pre enter beta` starts prerelease mode. Each `jpm changeset version` then releases versions
