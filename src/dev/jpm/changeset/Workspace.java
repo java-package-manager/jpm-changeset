@@ -13,10 +13,11 @@ import java.util.List;
  * each module's version (its own, or the workspace root's when it inherits it) and which modules of the workspace it
  * depends on.
  *
- * @param root    the project's folder
- * @param modules its modules, in jpm's build order
+ * @param root     the project's folder
+ * @param modules  its modules, in jpm's build order
+ * @param settings the root's {@code "extensions": { "changeset": { ... } }}
  */
-public record Workspace(Path root, List<Module> modules) {
+public record Workspace(Path root, List<Module> modules, java.util.Map<String, Object> settings) {
     /**
      * A module.
      *
@@ -42,7 +43,22 @@ public record Workspace(Path root, List<Module> modules) {
             }
             out.add(new Module(m.name(), m.dir(), m.version(), versionFile, List.copyOf(deps), m.group() != null));
         }
-        return new Workspace(p.dir(), List.copyOf(out));
+        java.util.Map<String, Object> settings = new java.util.LinkedHashMap<>();
+        if (p.extensions().get("changeset") instanceof java.util.Map<?, ?> s) s.forEach((k, v) -> settings.put(String.valueOf(k), v));
+        return new Workspace(p.dir(), List.copyOf(out), settings);
+    }
+
+    /** The groups of a setting ({@code "fixed"} or {@code "linked"}): lists of module names. */
+    public List<List<String>> groups(String key) {
+        List<List<String>> out = new ArrayList<>();
+        Object v = settings.get(key);
+        if (v == null) return out;
+        if (!(v instanceof List<?> groups)) throw new ChangesetException("extensions.changeset." + key + " must be a list of lists of module names");
+        for (Object g : groups) {
+            if (!(g instanceof List<?> names)) throw new ChangesetException("extensions.changeset." + key + " must be a list of lists of module names");
+            out.add(names.stream().map(String::valueOf).toList());
+        }
+        return out;
     }
 
     /** The module named {@code name}, or null. */

@@ -27,18 +27,41 @@ public record Plan(Map<String, Release> releases) {
      */
     public record Release(Workspace.Module module, Bump bump, String newVersion, Map<Bump, List<String>> changes, List<String> updated) {}
 
+    /**
+     * How releases are grouped, and the prerelease state.
+     *
+     * @param fixed  groups of modules that always release together, at one version
+     * @param linked groups whose released members share the highest new version among them
+     * @param pre    the prerelease state, or null
+     */
+    public record Options(List<List<String>> fixed, List<List<String>> linked, Pre pre) {
+        public static Options none() {
+            return new Options(List.of(), List.of(), null);
+        }
+    }
+
     /** The plan for these changesets; a changeset that names a module the workspace does not have is an error. */
     public static Plan of(Workspace ws, List<Changeset> changesets) {
+        return of(ws, changesets, Options.none());
+    }
+
+    /** The plan for these changesets, with groups and prerelease mode. */
+    public static Plan of(Workspace ws, List<Changeset> changesets, Options o) {
+        for (List<String> g : concat(o.fixed(), o.linked())) {
+            for (String n : g) if (ws.module(n) == null) throw new ChangesetException("the group " + g + " names \"" + n + "\", which is not a module of this project");
+        }
+        Pre pre = o.pre();
         Map<String, Bump> bumps = new LinkedHashMap<>();
         Map<String, Map<Bump, List<String>>> changes = new LinkedHashMap<>();
         for (Changeset c : changesets) {
+            boolean inLog = pre == null || pre.exiting() || !pre.released().contains(c.id());
             for (Map.Entry<String, Bump> e : c.releases().entrySet()) {
                 if (ws.module(e.getKey()) == null) {
                     throw new ChangesetException(Changeset.DIR + "/" + c.id() + ".md names \"" + e.getKey() + "\", which is not a module of this project"
                             + " (" + String.join(", ", ws.modules().stream().map(Workspace.Module::name).toList()) + ")");
                 }
                 bumps.merge(e.getKey(), e.getValue(), Bump::max);
-                if (!c.summary().isBlank()) {
+                if (inLog && !c.summary().isBlank()) {
                     changes.computeIfAbsent(e.getKey(), k -> new LinkedHashMap<>()).computeIfAbsent(e.getValue(), k -> new ArrayList<>()).add(c.summary());
                 }
             }
@@ -61,12 +84,40 @@ public record Plan(Map<String, Release> releases) {
                     grew = true;
                 }
             }
+            for (List<String> g : o.fixed()) {
+                Bump max = null;
+                for (String n : g) if (bumps.containsKey(n)) max = max == null ? bumps.get(n) : max.max(bumps.get(n));
+                if (max == null) continue;
+                for (String n : g) {
+                    if (bumps.get(n) != max) {
+                        bumps.put(n, max);
+                        grew = true;
+                    }
+                }
+            }
+        }
+        Map<String, String> next = new LinkedHashMap<>();
+        for (Workspace.Module m : ws.modules()) {
+            Bump b = bumps.get(m.name());
+            if (b != null) next.put(m.name(), b.apply(base(m, pre)));
+        }
+        List<List<String>> shared = new ArrayList<>(concat(o.fixed(), o.linked()));
+        Map<Path, List<String>> byFile = new LinkedHashMap<>();
+        for (Workspace.Module m : ws.modules()) byFile.computeIfAbsent(m.versionFile(), k -> new ArrayList<>()).add(m.name());
+        shared.addAll(byFile.values());
+        for (List<String> g : shared) {
+            String max = null;
+            for (String n : g) if (next.containsKey(n) && (max == null || compare(next.get(n), max) > 0)) max = next.get(n);
+            if (max == null) continue;
+            for (String n : g) if (next.containsKey(n)) next.put(n, max);
         }
         Map<String, Release> out = new LinkedHashMap<>();
         for (Workspace.Module m : ws.modules()) {
             Bump b = bumps.get(m.name());
             if (b == null) continue;
-            out.put(m.name(), new Release(m, b, b.apply(m.version()), changes.getOrDefault(m.name(), Map.of()), new ArrayList<>()));
+            String v = next.get(m.name());
+            if (pre != null && !pre.exiting()) v = v + "-" + pre.tag() + "." + pre.counters().getOrDefault(m.name(), 0);
+            out.put(m.name(), new Release(m, b, v, changes.getOrDefault(m.name(), Map.of()), new ArrayList<>()));
         }
         for (Release r : out.values()) {
             Set<String> updated = new LinkedHashSet<>();
@@ -74,6 +125,26 @@ public record Plan(Map<String, Release> releases) {
             r.updated().addAll(updated);
         }
         return new Plan(out);
+    }
+
+    private static String base(Workspace.Module m, Pre pre) {
+        return pre == null ? m.version() : pre.initialVersions().getOrDefault(m.name(), m.version());
+    }
+
+    private static <T> List<T> concat(List<T> a, List<T> b) {
+        List<T> out = new ArrayList<>(a);
+        out.addAll(b);
+        return out;
+    }
+
+    /** Compares two versions by their major, minor and patch numbers. */
+    static int compare(String a, String b) {
+        String[] x = a.split("[-+]", 2)[0].split("\\."), y = b.split("[-+]", 2)[0].split("\\.");
+        for (int i = 0; i < 3; i++) {
+            int c = Integer.compare(i < x.length ? Integer.parseInt(x[i]) : 0, i < y.length ? Integer.parseInt(y[i]) : 0);
+            if (c != 0) return c;
+        }
+        return 0;
     }
 
     /** The changelog entry of one release, as Markdown, starting with its version heading. */

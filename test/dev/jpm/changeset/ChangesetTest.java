@@ -96,4 +96,50 @@ class ChangesetTest {
         assertThrows(ChangesetException.class, () -> Main.parseAdd(List.of("--empty", "--module", "core")));
         assertThrows(ChangesetException.class, () -> Main.parseAdd(List.of("--loud")));
     }
+
+    @Test
+    void groupsReleaseTogether(@TempDir Path root) throws Exception {
+        Workspace ws = workspace(root);
+        Changeset core = Changeset.parse("a", "---\ncore: minor\n---\n\nAdd a cache.\n");
+        Plan fixed = Plan.of(ws, List.of(core), new Plan.Options(List.of(List.of("core", "docs")), List.of(), null));
+        assertEquals("1.3.0", fixed.releases().get("core").newVersion());
+        assertEquals("1.3.0", fixed.releases().get("docs").newVersion(), "a fixed group shares the highest version, bumped");
+        Changeset both = Changeset.parse("b", "---\ncore: patch\ndocs: minor\n---\n\nx\n");
+        Plan linked = Plan.of(ws, List.of(both), new Plan.Options(List.of(), List.of(List.of("core", "docs")), null));
+        assertEquals("1.2.1", Bump.PATCH.apply("1.2.0"));
+        assertEquals("1.2.1", linked.releases().get("core").newVersion(), "core 1.2.1 is higher than docs 0.4.0");
+        assertEquals("1.2.1", linked.releases().get("docs").newVersion());
+        Plan alone = Plan.of(ws, List.of(core), new Plan.Options(List.of(), List.of(List.of("core", "docs")), null));
+        assertTrue(!alone.releases().containsKey("docs"), "a linked group does not release members without changes");
+        assertThrows(ChangesetException.class, () -> Plan.of(ws, List.of(core), new Plan.Options(List.of(List.of("core", "web")), List.of(), null)));
+    }
+
+    @Test
+    void prereleasesCountUpAndEndInAStableVersion(@TempDir Path root) throws Exception {
+        Workspace ws = workspace(root);
+        Changeset one = Changeset.parse("one", "---\ncore: minor\n---\n\nAdd a cache.\n");
+        Changeset two = Changeset.parse("two", "---\ncore: patch\n---\n\nFix the cache.\n");
+        Map<String, String> initial = Map.of("core", "1.2.0", "api", "1.0.0", "app", "1.0.0", "docs", "0.3.0");
+        Pre first = new Pre(false, "beta", initial, List.of(), Map.of());
+        Plan p1 = Plan.of(ws, List.of(one), new Plan.Options(List.of(), List.of(), first));
+        assertEquals("1.3.0-beta.0", p1.releases().get("core").newVersion());
+        assertEquals("1.0.1-beta.0", p1.releases().get("api").newVersion());
+        Pre second = new Pre(false, "beta", initial, List.of("one"), Map.of("core", 1, "api", 1, "app", 1));
+        Plan p2 = Plan.of(ws, List.of(one, two), new Plan.Options(List.of(), List.of(), second));
+        assertEquals("1.3.0-beta.1", p2.releases().get("core").newVersion(), "still bumped from 1.2.0, the version before prerelease mode");
+        assertEquals("## 1.3.0-beta.1\n\n### Patch Changes\n\n- Fix the cache.\n", Plan.entry(p2.releases().get("core")),
+                "only the changesets no prerelease had yet");
+        Pre exit = new Pre(true, "beta", initial, List.of("one", "two"), Map.of("core", 2));
+        Plan stable = Plan.of(ws, List.of(one, two), new Plan.Options(List.of(), List.of(), exit));
+        assertEquals("1.3.0", stable.releases().get("core").newVersion());
+        assertTrue(Plan.entry(stable.releases().get("core")).contains("- Add a cache.") && Plan.entry(stable.releases().get("core")).contains("- Fix the cache."));
+    }
+
+    @Test
+    void keepsThePrereleaseState(@TempDir Path root) {
+        Pre p = new Pre(false, "rc", Map.of("core", "1.2.0"), List.of("one"), Map.of("core", 2));
+        p.write(root);
+        assertEquals(p, Pre.read(root));
+        assertEquals(null, Pre.read(root.resolve("elsewhere")));
+    }
 }

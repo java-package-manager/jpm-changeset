@@ -50,6 +50,30 @@ Review and commit that, then `jpm changeset publish [jpm publish options]` runs
 version has no tag yet, and tags it: `1.3.0` in a project with one module, `core@1.3.0` in a workspace. Push
 the tags with `git push --follow-tags`.
 
+## Prereleases
+
+`jpm changeset pre enter beta` starts prerelease mode. Each `jpm changeset version` then releases versions
+like `1.4.0-beta.0`, `1.4.0-beta.1`, … (each module counts its own), always bumped from the version before
+prerelease mode, and keeps the changesets; a prerelease's changelog entry lists only the changesets no earlier
+prerelease had. `jpm changeset pre exit` ends it: the next `version` releases `1.4.0` with every change
+since prerelease mode began, and deletes the changesets. The state is in `.changeset/pre.json`; commit it.
+
+## Groups
+
+In the root `project.jsonc`:
+
+```jsonc
+"extensions": {
+  "changeset": {
+    "fixed": [["core", "api"]],      // always released together, at one version
+    "linked": [["web", "admin"]]     // the ones that are released share the highest new version
+  }
+}
+```
+
+A *fixed* group releases all its modules whenever one of them changes, at the highest version among them.
+A *linked* group releases only the modules that changed, but gives them the same version.
+
 ## Checking
 
 `jpm changeset status --check` fails when a module changed since the base branch (`--since <ref>`, by

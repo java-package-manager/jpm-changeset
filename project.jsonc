@@ -3,7 +3,7 @@
 {
   "name": "jpm-changeset",
   "group": "dev.jpm",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Versions and changelogs for jpm projects from changeset files, like changesets for npm",
   "license": "MIT",
   "url": "https://github.com/java-package-manager/jpm-changeset",
@@ -34,7 +34,9 @@
         }
       },
       "changeset version": { "description": "Apply the changesets: bump versions, write CHANGELOG.md, delete them" },
-      "changeset publish": { "description": "Publish every module whose version has no tag yet with jpm publish, and tag it" }
+      "changeset publish": { "description": "Publish every module whose version has no tag yet with jpm publish, and tag it" },
+      "changeset pre enter": { "description": "Prerelease mode: version releases versions like 1.3.0-beta.0 and keeps the changesets" },
+      "changeset pre exit": { "description": "The next version releases the stable versions and ends prerelease mode" }
     },
     "checks": {
       "status": { "description": "every changed module has a changeset", "run": ["status", "--check"] }

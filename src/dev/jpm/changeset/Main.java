@@ -39,6 +39,13 @@ public final class Main {
               jpm changeset version   Apply the changesets: bump versions, write CHANGELOG.md, delete them
               jpm changeset publish [jpm publish options]
                                       Publish every module whose version has no tag yet, and tag it
+              jpm changeset pre enter <tag>
+                                      Prerelease mode: version releases 1.3.0-<tag>.0, .1, ... and keeps the changesets
+              jpm changeset pre exit  The next version releases the stable versions and ends prerelease mode
+
+            Groups, in the root project.jsonc: "extensions": { "changeset": {
+              "fixed": [["core", "api"]],    always released together, at one version
+              "linked": [["web", "admin"]]   those that are released share the highest new version } }
             """;
 
     private Main() {}
@@ -69,6 +76,7 @@ public final class Main {
                 case "status" -> status(root, args);
                 case "version" -> version(root, args);
                 case "publish" -> publish(root, args);
+                case "pre" -> pre(root, args);
                 default -> throw new ChangesetException("unknown command \"" + cmd + "\"; see jpm changeset --help");
             };
             System.exit(code);
@@ -156,6 +164,34 @@ public final class Main {
         return 0;
     }
 
+    static Plan.Options options(Workspace ws, Pre pre) {
+        return new Plan.Options(ws.groups("fixed"), ws.groups("linked"), pre);
+    }
+
+    static int pre(Path root, List<String> args) {
+        if (args.isEmpty()) throw new ChangesetException("use `jpm changeset pre enter <tag>` or `jpm changeset pre exit`");
+        Pre pre = Pre.read(root);
+        switch (args.get(0)) {
+            case "enter" -> {
+                if (args.size() != 2 || !args.get(1).matches("[0-9A-Za-z-]+")) throw new ChangesetException("give the prerelease tag: `jpm changeset pre enter beta`");
+                if (pre != null && !pre.exiting()) throw new ChangesetException("already in prerelease mode (" + pre.tag() + "); `jpm changeset pre exit` first");
+                Workspace ws = load(root);
+                Map<String, String> initial = new LinkedHashMap<>();
+                for (Workspace.Module m : ws.modules()) initial.put(m.name(), m.version());
+                new Pre(false, args.get(1), initial, pre == null ? new ArrayList<>() : new ArrayList<>(pre.released()), new LinkedHashMap<>()).write(root);
+                step("Entered", "prerelease mode: `jpm changeset version` releases versions like 1.3.0-" + args.get(1) + ".0");
+            }
+            case "exit" -> {
+                if (args.size() != 1) throw new ChangesetException("`jpm changeset pre exit` takes nothing more");
+                if (pre == null || pre.exiting()) throw new ChangesetException("not in prerelease mode");
+                new Pre(true, pre.tag(), pre.initialVersions(), pre.released(), pre.counters()).write(root);
+                step("Exiting", "prerelease mode: the next `jpm changeset version` releases the stable versions");
+            }
+            default -> throw new ChangesetException("unknown pre command \"" + args.get(0) + "\"; use enter or exit");
+        }
+        return 0;
+    }
+
     static int status(Path root, List<String> args) {
         String since = null;
         boolean check = false;
@@ -168,7 +204,9 @@ public final class Main {
         }
         Workspace ws = load(root);
         List<Changeset> changesets = Changeset.readAll(root);
-        Plan plan = Plan.of(ws, changesets);
+        Pre pre = Pre.read(root);
+        Plan plan = Plan.of(ws, changesets, options(ws, pre));
+        if (pre != null) info(pre.exiting() ? "Leaving prerelease mode (" + pre.tag() + "): the next version is stable." : "Prerelease mode: " + pre.tag());
         if (changesets.isEmpty()) info("No changesets.");
         for (Changeset c : changesets) {
             info(Changeset.DIR + "/" + c.id() + ".md  " + (c.releases().isEmpty() ? "(empty)"
@@ -218,11 +256,14 @@ public final class Main {
         if (!args.isEmpty()) throw new ChangesetException("unknown option " + args.get(0) + "; see jpm changeset --help");
         Workspace ws = load(root);
         List<Changeset> changesets = Changeset.readAll(root);
-        if (changesets.isEmpty()) {
+        Pre pre = Pre.read(root);
+        boolean prerelease = pre != null && !pre.exiting();
+        List<Changeset> fresh = prerelease ? changesets.stream().filter(c -> !pre.released().contains(c.id())).toList() : changesets;
+        if (fresh.isEmpty() && !(pre != null && pre.exiting() && !changesets.isEmpty())) {
             info("No changesets to apply.");
             return 0;
         }
-        Plan plan = Plan.of(ws, changesets);
+        Plan plan = Plan.of(ws, changesets, options(ws, pre));
         Set<Path> bumped = new LinkedHashSet<>();
         for (Plan.Release r : plan.releases().values()) {
             if (bumped.add(r.module().versionFile())) write(r.module().versionFile(), Manifests.withVersion(read(r.module().versionFile()), r.newVersion()));
@@ -230,14 +271,31 @@ public final class Main {
             write(changelog, Plan.prepend(Files.exists(changelog) ? read(changelog) : null, r.module().name(), Plan.entry(r)));
             step("Bumped", r.module().name() + " " + r.module().version() + " -> " + r.newVersion());
         }
-        for (Changeset c : changesets) {
-            try {
-                Files.delete(root.resolve(Changeset.DIR).resolve(c.id() + ".md"));
-            } catch (IOException e) {
-                throw new ChangesetException("could not delete " + c.id() + ".md: " + e.getMessage());
+        if (prerelease) {
+            List<String> released = new ArrayList<>(pre.released());
+            for (Changeset c : fresh) released.add(c.id());
+            Map<String, Integer> counters = new LinkedHashMap<>(pre.counters());
+            for (String m : plan.releases().keySet()) counters.merge(m, 1, Integer::sum);
+            new Pre(false, pre.tag(), pre.initialVersions(), released, counters).write(root);
+        } else {
+            for (Changeset c : changesets) {
+                try {
+                    Files.delete(root.resolve(Changeset.DIR).resolve(c.id() + ".md"));
+                } catch (IOException e) {
+                    throw new ChangesetException("could not delete " + c.id() + ".md: " + e.getMessage());
+                }
+            }
+            if (pre != null) {
+                try {
+                    Files.delete(root.resolve(Changeset.DIR).resolve(Pre.FILE));
+                } catch (IOException e) {
+                    throw new ChangesetException("could not delete " + Pre.FILE + ": " + e.getMessage());
+                }
+                step("Left", "prerelease mode");
             }
         }
-        step("Applied", changesets.size() + (changesets.size() == 1 ? " changeset" : " changesets")
+        step("Applied", fresh.size() + (fresh.size() == 1 ? " changeset" : " changesets")
+                + (prerelease ? " as a prerelease (kept for the stable release)" : "")
                 + "; review the changes and commit them, then run `jpm changeset publish`");
         return 0;
     }
