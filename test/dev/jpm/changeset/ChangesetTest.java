@@ -100,6 +100,15 @@ class ChangesetTest {
     }
 
     @Test
+    void findsAVersionsChanges() {
+        String changelog = "# core\n\n## 1.3.0\n\n### Minor changes\n\n- Add a cache.\n\n## 1.2.0\n\n### Patch changes\n\n- Fix it.\n";
+        assertEquals("### Minor changes\n\n- Add a cache.", Plan.changesOf(changelog, "1.3.0"));
+        assertEquals("### Patch changes\n\n- Fix it.", Plan.changesOf(changelog, "1.2.0"));
+        assertEquals(null, Plan.changesOf(changelog, "1.1.0"));
+        assertEquals(null, Plan.changesOf(null, "1.3.0"));
+    }
+
+    @Test
     void parsesPublishOptions() {
         assertEquals(new Main.PublishOptions(false, List.of("central")), Main.parsePublish(List.of("central"), Map.of()));
         assertEquals(new Main.PublishOptions(true, List.of()), Main.parsePublish(List.of("--tag-only"), Map.of()));

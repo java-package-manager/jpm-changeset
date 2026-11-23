@@ -170,6 +170,21 @@ public record Plan(Map<String, Release> releases) {
         return sb.toString();
     }
 
+    /**
+     * The changes {@code changelog} lists for {@code version}: the text under its {@code ## <version>} heading, up to the
+     * next version's, without the heading; null when it has no entry for that version.
+     */
+    public static String changesOf(String changelog, String version) {
+        if (changelog == null) return null;
+        List<String> lines = List.of(changelog.replace("\r\n", "\n").split("\n", -1));
+        int start = lines.indexOf("## " + version);
+        if (start < 0) return null;
+        StringBuilder sb = new StringBuilder();
+        for (int i = start + 1; i < lines.size() && !lines.get(i).startsWith("## "); i++) sb.append(lines.get(i)).append('\n');
+        String out = sb.toString().strip();
+        return out.isEmpty() ? null : out;
+    }
+
     /** {@code changelog} with the entry added at the top, under its {@code # <module>} title (which it gets when it has none). */
     public static String prepend(String changelog, String module, String entry) {
         String title = "# " + module + "\n";
