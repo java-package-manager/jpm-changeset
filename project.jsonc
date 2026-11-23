@@ -3,7 +3,7 @@
 {
   "name": "jpm-changeset",
   "group": "dev.jpm",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Versions and changelogs for jpm projects from changeset files, like changesets for npm",
   "license": "MIT",
   "url": "https://github.com/java-package-manager/jpm-changeset",

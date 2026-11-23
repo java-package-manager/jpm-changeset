@@ -57,6 +57,15 @@ final class Git {
         return out;
     }
 
+    /** A file as it was where this branch left {@code base}, or null if it did not exist there. */
+    String fileAtBase(String base, Path file) {
+        Result mb = run("merge-base", base, "HEAD");
+        if (mb.exit() != 0) return null;
+        String rel = dir.toAbsolutePath().normalize().relativize(file.toAbsolutePath().normalize()).toString().replace('\\', '/');
+        Result r = run("show", mb.out().strip() + ":./" + rel);
+        return r.exit() == 0 ? r.out() : null;
+    }
+
     boolean tagExists(String tag) {
         return run("rev-parse", "--verify", "--quiet", "refs/tags/" + tag).exit() == 0;
     }

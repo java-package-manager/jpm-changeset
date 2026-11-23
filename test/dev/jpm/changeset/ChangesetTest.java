@@ -163,4 +163,21 @@ class ChangesetTest {
         assertEquals(p, Pre.read(root));
         assertEquals(null, Pre.read(root.resolve("elsewhere")));
     }
+
+    @Test
+    void aVersionBumpSinceTheBaseIsARelease(@TempDir Path root) throws Exception {
+        Git git = new Git(root);
+        Path manifest = root.resolve("project.jsonc");
+        Files.writeString(manifest, "{ \"name\": \"core\", \"version\": \"1.0.0\" }\n");
+        for (String[] a : List.of(new String[] {"init", "-q", "-b", "main"}, new String[] {"add", "-A"},
+                new String[] {"-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", "commit", "-qm", "1.0.0"},
+                new String[] {"switch", "-q", "-c", "release"})) {
+            assertEquals(0, git.run(a).exit());
+        }
+        Files.writeString(manifest, "{ \"name\": \"core\", \"version\": \"1.0.1\" }\n");
+        assertTrue(Main.released(git, "main", new Workspace.Module("core", root, "1.0.1", manifest, List.of(), false)));
+        assertEquals(false, Main.released(git, "main", new Workspace.Module("core", root, "1.0.0", manifest, List.of(), false)));
+        assertEquals("1.0.1", Manifests.version(Files.readString(manifest)));
+        assertEquals(null, Manifests.version("{ \"name\": \"core\" }"));
+    }
 }
