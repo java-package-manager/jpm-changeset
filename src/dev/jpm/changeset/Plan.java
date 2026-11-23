@@ -23,7 +23,8 @@ public record Plan(Map<String, Release> releases) {
      * @param bump       how much its version rises
      * @param newVersion its version after the release
      * @param changes    bump to the summaries of its changesets
-     * @param updated    the workspace modules it depends on that are released too, as name@version
+     * @param updated    the workspace modules it depends on that are released too, as name@version; not the ones that share
+     *                   its version (the same manifest's, or a fixed group's), which are always released with it
      */
     public record Release(Workspace.Module module, Bump bump, String newVersion, Map<Bump, List<String>> changes, List<String> updated) {}
 
@@ -121,10 +122,19 @@ public record Plan(Map<String, Release> releases) {
         }
         for (Release r : out.values()) {
             Set<String> updated = new LinkedHashSet<>();
-            for (String d : r.module().dependsOn()) if (out.containsKey(d)) updated.add(d + "@" + out.get(d).newVersion());
+            for (String d : r.module().dependsOn()) {
+                Release dep = out.get(d);
+                if (dep == null || dep.module().versionFile().equals(r.module().versionFile()) || inOneGroup(o.fixed(), d, r.module().name())) continue;
+                updated.add(d + "@" + dep.newVersion());
+            }
             r.updated().addAll(updated);
         }
         return new Plan(out);
+    }
+
+    private static boolean inOneGroup(List<List<String>> groups, String a, String b) {
+        for (List<String> g : groups) if (g.contains(a) && g.contains(b)) return true;
+        return false;
     }
 
     private static String base(Workspace.Module m, Pre pre) {

@@ -50,7 +50,8 @@ class ChangesetTest {
                   { "name": "core", "group": "g", "version": "1.2.0", "dir": "%s/core" },
                   { "name": "api", "group": "g", "version": "1.0.0", "dir": "%s/api",
                     "dependencies": [{ "key": "workspace:core", "kind": "workspace", "module": "core" }] },
-                  { "name": "app", "version": "1.0.0", "dir": "%s/app" },
+                  { "name": "app", "version": "1.0.0", "dir": "%s/app",
+                    "dependencies": [{ "key": "workspace:api", "kind": "workspace", "module": "api" }] },
                   { "name": "docs", "version": "0.3.0", "dir": "%s/docs" } ] }
                 """.formatted(root, root, root, root, root);
         return Workspace.of(Results.project((Map<String, Object>) Jsonc.parse(load)));
@@ -69,6 +70,7 @@ class ChangesetTest {
         assertEquals("1.0.1", plan.releases().get("api").newVersion());
         assertEquals("1.0.1", plan.releases().get("app").newVersion());
         assertEquals(List.of("core@1.3.0"), plan.releases().get("api").updated());
+        assertEquals(List.of(), plan.releases().get("app").updated(), "api shares app's version, so it is always released with it");
         assertEquals("## 1.3.0\n\n### Minor Changes\n\n- Add a cache.\n\n### Patch Changes\n\n- Fix a leak.\n", Plan.entry(plan.releases().get("core")));
         assertEquals("## 1.0.1\n\n### Patch Changes\n\n- Updated dependencies: core@1.3.0\n", Plan.entry(plan.releases().get("api")));
         ChangesetException e = assertThrows(ChangesetException.class, () -> Plan.of(ws, List.of(Changeset.parse("c", "---\nweb: patch\n---\n\nx\n"))));
