@@ -50,6 +50,15 @@ Review and commit that, then `jpm changeset publish [jpm publish options]` runs
 version has no tag yet, and tags it: `1.3.0` in a project with one module, `core@1.3.0` in a workspace. Push
 the tags with `git push --follow-tags`.
 
+A project whose release is its Git tag, such as a jpm extension (`jpm add` installs those from their Git
+source), needs no jpm publish: `jpm changeset publish --tag-only` only tags. To make that the project's
+default, so `jpm changeset publish` and changeset-action's `publish: true` tag only, set it in the root
+`project.jsonc`:
+
+```jsonc
+"extensions": { "changeset": { "tagOnly": true } }
+```
+
 ### In GitHub Actions
 
 [changeset-action](https://github.com/java-package-manager/changeset-action) keeps a "Version packages"

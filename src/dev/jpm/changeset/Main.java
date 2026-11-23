@@ -39,13 +39,15 @@ public final class Main {
               jpm changeset version   Apply the changesets: bump versions, write CHANGELOG.md, delete them
               jpm changeset publish [jpm publish options]
                                       Publish every module whose version has no tag yet, and tag it
+                --tag-only            Only tag, without jpm publish (for projects released as Git tags)
               jpm changeset pre enter <tag>
                                       Prerelease mode: version releases 1.3.0-<tag>.0, .1, ... and keeps the changesets
               jpm changeset pre exit  The next version releases the stable versions and ends prerelease mode
 
             Groups, in the root project.jsonc: "extensions": { "changeset": {
               "fixed": [["core", "api"]],    always released together, at one version
-              "linked": [["web", "admin"]]   those that are released share the highest new version } }
+              "linked": [["web", "admin"]],  those that are released share the highest new version
+              "tagOnly": true                publish only tags, as --tag-only does } }
             """;
 
     private Main() {}
@@ -300,16 +302,41 @@ public final class Main {
         return 0;
     }
 
+    /**
+     * How {@code publish} releases.
+     *
+     * @param tagOnly     tag without running jpm publish: the tag is the release, as for jpm extensions
+     * @param publishArgs the options passed on to jpm publish
+     */
+    record PublishOptions(boolean tagOnly, List<String> publishArgs) {}
+
+    static PublishOptions parsePublish(List<String> args, Map<String, Object> settings) {
+        List<String> rest = new ArrayList<>(args);
+        boolean tagOnly = rest.remove("--tag-only");
+        Object setting = settings.get("tagOnly");
+        if (setting != null && !(setting instanceof Boolean)) throw new ChangesetException("extensions.changeset.tagOnly must be true or false");
+        tagOnly |= Boolean.TRUE.equals(setting);
+        if (tagOnly && !rest.isEmpty()) throw new ChangesetException("--tag-only runs no jpm publish, so it takes no jpm publish options (" + String.join(" ", rest) + ")");
+        return new PublishOptions(tagOnly, List.copyOf(rest));
+    }
+
     static int publish(Path root, List<String> args) {
         Workspace ws = load(root);
+        PublishOptions o = parsePublish(args, ws.settings());
         Git git = new Git(root);
         int published = 0;
         for (Workspace.Module m : ws.modules()) {
             if (!m.published()) continue;
             String tag = ws.modules().size() == 1 ? m.version() : m.name() + "@" + m.version();
             if (git.tagExists(tag)) continue;
+            if (o.tagOnly()) {
+                git.tag(tag, m.name() + " " + m.version());
+                step("Tagged", tag);
+                published++;
+                continue;
+            }
             List<String> cmd = new ArrayList<>(List.of(env("JPM_EXE", "jpm"), "publish"));
-            cmd.addAll(args);
+            cmd.addAll(o.publishArgs());
             if (ws.modules().size() > 1) cmd.addAll(List.of("--module", m.name()));
             step("Publishing", m.name() + " " + m.version());
             int exit;
