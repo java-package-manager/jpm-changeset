@@ -6,6 +6,17 @@ import dev.jpm.api.json.Jsonc;
 public final class Manifests {
     private Manifests() {}
 
+    /** The top-level {@code "version"} of {@code source}, or null if it has none or cannot be read. */
+    public static String version(String source) {
+        try {
+            Jsonc.Node root = Jsonc.parseNode(source);
+            Jsonc.Member v = root.members == null ? null : root.members.get("version");
+            return v != null && v.value.value instanceof String s ? s : null;
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
     /** {@code source} with its top-level {@code "version"} set to {@code version}. */
     public static String withVersion(String source, String version) {
         Jsonc.Node root = Jsonc.parseNode(source);

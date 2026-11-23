@@ -240,6 +240,7 @@ public final class Main {
             for (String m : changed) {
                 if (covered.contains(m)) continue;
                 Workspace.Module mod = ws.module(m);
+                if (released(git, base, mod)) continue;
                 Map<String, Object> p = new LinkedHashMap<>();
                 p.put("severity", "error");
                 p.put("message", m + " changed since " + base + ", but no changeset releases it");
@@ -252,6 +253,16 @@ public final class Main {
         if (forJpm) write(Path.of(report), Jsonc.write(problems) + "\n");
         if (problems.isEmpty()) step("Checked", changed.isEmpty() ? "nothing changed since " + base : "every changed module has a changeset");
         return problems.isEmpty() ? 0 : 1;
+    }
+
+    /**
+     * True if the module's version differs from the one at {@code base}: the change is a release, such as the
+     * Version packages pull request, which deletes the changesets it applies.
+     */
+    static boolean released(Git git, String base, Workspace.Module mod) {
+        String before = git.fileAtBase(base, mod.versionFile());
+        String was = before == null ? null : Manifests.version(before);
+        return was != null && !was.equals(mod.version());
     }
 
     static int version(Path root, List<String> args) {
