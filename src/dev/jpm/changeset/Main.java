@@ -21,7 +21,9 @@ import java.util.Set;
  * it reads the project from that jpm over its protocol.
  */
 public final class Main {
-    /** The version in project.jsonc, from the {@code BuildConfig} class jpm generates ({@code "defineClass"}). */
+    /**
+     * The version in project.jsonc, from the {@code BuildConfig} class jpm generates ({@code "defineClass"}).
+     */
     static final String VERSION = BuildConfig.VERSION;
 
     static final String HELP = """
@@ -50,7 +52,8 @@ public final class Main {
               "tagOnly": true                publish only tags, as --tag-only does } }
             """;
 
-    private Main() {}
+    private Main() {
+    }
 
     static void step(String verb, String msg) {
         System.err.println(String.format("%12s", verb) + " " + msg);
@@ -370,7 +373,9 @@ public final class Main {
         return 0;
     }
 
-    /** The message of a module's release tag: {@code <name> <version>}, then its changelog entry, for release notes. */
+    /**
+     * The message of a module's release tag: {@code <name> <version>}, then its changelog entry, for release notes.
+     */
     static String tagMessage(Workspace.Module m) {
         String subject = m.name() + " " + m.version();
         Path file = m.dir().resolve("CHANGELOG.md");

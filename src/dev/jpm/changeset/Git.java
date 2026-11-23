@@ -6,7 +6,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-/** The git commands jpm-changeset runs, in the project's folder. */
+/**
+ * The git commands jpm-changeset runs, in the project's folder.
+ */
 final class Git {
     private final Path dir;
 
@@ -32,19 +34,23 @@ final class Git {
         }
     }
 
-    /** The first of these refs that exists, or null. */
+    /**
+     * The first of these refs that exists, or null.
+     */
     String firstRef(List<String> refs) {
         for (String r : refs) if (run("rev-parse", "--verify", "--quiet", r + "^{commit}").exit() == 0) return r;
         return null;
     }
 
-    /** The files changed since {@code base} (from where this branch left it), committed or not, relative to the repository. */
+    /**
+     * The files changed since {@code base} (from where this branch left it), committed or not, relative to the repository.
+     */
     List<Path> changedSince(String base) {
         Result top = run("rev-parse", "--show-toplevel");
         if (top.exit() != 0) throw new ChangesetException("not in a git repository: " + top.out().strip());
         Path root = Path.of(top.out().strip());
         List<Path> out = new ArrayList<>();
-        for (String spec : new String[] {base + "...HEAD", null}) {
+        for (String spec : new String[]{base + "...HEAD", null}) {
             Result r = spec == null ? run("status", "--porcelain", "--untracked-files=all") : run("diff", "--name-only", spec);
             if (r.exit() != 0) throw new ChangesetException("git could not compare with " + base + ": " + r.out().strip());
             for (String line : r.out().split("\n")) {
@@ -57,7 +63,9 @@ final class Git {
         return out;
     }
 
-    /** A file as it was where this branch left {@code base}, or null if it did not exist there. */
+    /**
+     * A file as it was where this branch left {@code base}, or null if it did not exist there.
+     */
     String fileAtBase(String base, Path file) {
         Result mb = run("merge-base", base, "HEAD");
         if (mb.exit() != 0) return null;

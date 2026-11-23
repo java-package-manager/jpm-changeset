@@ -23,7 +23,9 @@ import java.util.Map;
 public record Pre(boolean exiting, String tag, Map<String, String> initialVersions, List<String> released, Map<String, Integer> counters) {
     public static final String FILE = "pre.json";
 
-    /** The prerelease state of a project, or null when it is not in prerelease mode. */
+    /**
+     * The prerelease state of a project, or null when it is not in prerelease mode.
+     */
     @SuppressWarnings("unchecked")
     public static Pre read(Path root) {
         Path f = root.resolve(Changeset.DIR).resolve(FILE);
@@ -43,7 +45,9 @@ public record Pre(boolean exiting, String tag, Map<String, String> initialVersio
         return new Pre("exit".equals(m.get("mode")), String.valueOf(m.get("tag")), initial, released, counters);
     }
 
-    /** Writes this state into the project's {@code .changeset/}. */
+    /**
+     * Writes this state into the project's {@code .changeset/}.
+     */
     public void write(Path root) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("mode", exiting ? "exit" : "pre");
