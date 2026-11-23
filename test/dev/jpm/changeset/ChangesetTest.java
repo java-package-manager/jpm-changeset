@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -104,8 +106,8 @@ class ChangesetTest {
         String changelog = "# core\n\n## 1.3.0\n\n### Minor changes\n\n- Add a cache.\n\n## 1.2.0\n\n### Patch changes\n\n- Fix it.\n";
         assertEquals("### Minor changes\n\n- Add a cache.", Plan.changesOf(changelog, "1.3.0"));
         assertEquals("### Patch changes\n\n- Fix it.", Plan.changesOf(changelog, "1.2.0"));
-        assertEquals(null, Plan.changesOf(changelog, "1.1.0"));
-        assertEquals(null, Plan.changesOf(null, "1.3.0"));
+        assertNull(Plan.changesOf(changelog, "1.1.0"));
+        assertNull(Plan.changesOf(null, "1.3.0"));
     }
 
     @Test
@@ -161,7 +163,7 @@ class ChangesetTest {
         Pre p = new Pre(false, "rc", Map.of("core", "1.2.0"), List.of("one"), Map.of("core", 2));
         p.write(root);
         assertEquals(p, Pre.read(root));
-        assertEquals(null, Pre.read(root.resolve("elsewhere")));
+        assertNull(Pre.read(root.resolve("elsewhere")));
     }
 
     @Test
@@ -169,15 +171,15 @@ class ChangesetTest {
         Git git = new Git(root);
         Path manifest = root.resolve("project.jsonc");
         Files.writeString(manifest, "{ \"name\": \"core\", \"version\": \"1.0.0\" }\n");
-        for (String[] a : List.of(new String[] {"init", "-q", "-b", "main"}, new String[] {"add", "-A"},
-                new String[] {"-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", "commit", "-qm", "1.0.0"},
-                new String[] {"switch", "-q", "-c", "release"})) {
+        for (String[] a : List.of(new String[]{"init", "-q", "-b", "main"}, new String[]{"add", "-A"},
+                new String[]{"-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", "commit", "-qm", "1.0.0"},
+                new String[]{"switch", "-q", "-c", "release"})) {
             assertEquals(0, git.run(a).exit());
         }
         Files.writeString(manifest, "{ \"name\": \"core\", \"version\": \"1.0.1\" }\n");
         assertTrue(Main.released(git, "main", new Workspace.Module("core", root, "1.0.1", manifest, List.of(), false)));
-        assertEquals(false, Main.released(git, "main", new Workspace.Module("core", root, "1.0.0", manifest, List.of(), false)));
+        assertFalse(Main.released(git, "main", new Workspace.Module("core", root, "1.0.0", manifest, List.of(), false)));
         assertEquals("1.0.1", Manifests.version(Files.readString(manifest)));
-        assertEquals(null, Manifests.version("{ \"name\": \"core\" }"));
+        assertNull(Manifests.version("{ \"name\": \"core\" }"));
     }
 }

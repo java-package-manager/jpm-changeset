@@ -29,7 +29,9 @@ import java.util.stream.Stream;
 public record Changeset(String id, Map<String, Bump> releases, String summary) {
     public static final String DIR = ".changeset";
 
-    /** Reads a changeset file's text. */
+    /**
+     * Reads a changeset file's text.
+     */
     public static Changeset parse(String id, String text) {
         String t = text.replace("\r\n", "\n");
         if (!t.startsWith("---\n")) throw new ChangesetException(id + ".md: a changeset starts with a --- line, then a line per module");
@@ -52,7 +54,9 @@ public record Changeset(String id, Map<String, Bump> releases, String summary) {
         return new Changeset(id, releases, summary);
     }
 
-    /** This changeset as the text of its file. */
+    /**
+     * This changeset as the text of its file.
+     */
     public String format() {
         StringBuilder sb = new StringBuilder("---\n");
         releases.forEach((m, b) -> sb.append('"').append(m).append("\": ").append(b).append('\n'));
@@ -60,7 +64,9 @@ public record Changeset(String id, Map<String, Bump> releases, String summary) {
         return sb.toString();
     }
 
-    /** Every changeset in a project's {@code .changeset/} folder, by file name; README.md and other non-changesets are skipped. */
+    /**
+     * Every changeset in a project's {@code .changeset/} folder, by file name; README.md and other non-changesets are skipped.
+     */
     public static List<Changeset> readAll(Path root) {
         Path dir = root.resolve(DIR);
         List<Changeset> out = new ArrayList<>();
@@ -82,7 +88,9 @@ public record Changeset(String id, Map<String, Bump> releases, String summary) {
     private static final String[] NOUNS = {"apples", "bees", "cats", "dogs", "eagles", "foxes", "geese", "hats", "islands",
             "jars", "kites", "lamps", "moons", "nets", "owls", "pens", "rivers", "stars", "trees", "waves"};
 
-    /** A readable file name that is not taken yet in {@code dir}, such as {@code brave-cats-sing}. */
+    /**
+     * A readable file name that is not taken yet in {@code dir}, such as {@code brave-cats-sing}.
+     */
     public static String newId(Path dir, java.util.random.RandomGenerator random) {
         for (int i = 0; ; i++) {
             String id = ADJECTIVES[random.nextInt(ADJECTIVES.length)] + "-" + NOUNS[random.nextInt(NOUNS.length)] + "-"

@@ -41,12 +41,16 @@ public record Plan(Map<String, Release> releases) {
         }
     }
 
-    /** The plan for these changesets; a changeset that names a module the workspace does not have is an error. */
+    /**
+     * The plan for these changesets; a changeset that names a module the workspace does not have is an error.
+     */
     public static Plan of(Workspace ws, List<Changeset> changesets) {
         return of(ws, changesets, Options.none());
     }
 
-    /** The plan for these changesets, with groups and prerelease mode. */
+    /**
+     * The plan for these changesets, with groups and prerelease mode.
+     */
     public static Plan of(Workspace ws, List<Changeset> changesets, Options o) {
         for (List<String> g : concat(o.fixed(), o.linked())) {
             for (String n : g) if (ws.module(n) == null) throw new ChangesetException("the group " + g + " names \"" + n + "\", which is not a module of this project");
@@ -147,7 +151,9 @@ public record Plan(Map<String, Release> releases) {
         return out;
     }
 
-    /** Compares two versions by their major, minor and patch numbers. */
+    /**
+     * Compares two versions by their major, minor and patch numbers.
+     */
     static int compare(String a, String b) {
         String[] x = a.split("[-+]", 2)[0].split("\\."), y = b.split("[-+]", 2)[0].split("\\.");
         for (int i = 0; i < 3; i++) {
@@ -157,7 +163,9 @@ public record Plan(Map<String, Release> releases) {
         return 0;
     }
 
-    /** The changelog entry of one release, as Markdown, starting with its version heading. */
+    /**
+     * The changelog entry of one release, as Markdown, starting with its version heading.
+     */
     public static String entry(Release r) {
         StringBuilder sb = new StringBuilder("## ").append(r.newVersion()).append("\n");
         for (Bump b : List.of(Bump.MAJOR, Bump.MINOR, Bump.PATCH)) {
@@ -185,7 +193,9 @@ public record Plan(Map<String, Release> releases) {
         return out.isEmpty() ? null : out;
     }
 
-    /** {@code changelog} with the entry added at the top, under its {@code # <module>} title (which it gets when it has none). */
+    /**
+     * {@code changelog} with the entry added at the top, under its {@code # <module>} title (which it gets when it has none).
+     */
     public static String prepend(String changelog, String module, String entry) {
         String title = "# " + module + "\n";
         if (changelog == null || changelog.isBlank()) return title + "\n" + entry;

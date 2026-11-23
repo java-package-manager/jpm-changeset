@@ -1,10 +1,14 @@
 package dev.jpm.changeset;
 
-/** How much a release raises a version: major for breaking changes, minor for features, patch for fixes. */
+/**
+ * How much a release raises a version: major for breaking changes, minor for features, patch for fixes.
+ */
 public enum Bump {
     PATCH, MINOR, MAJOR;
 
-    /** The bump named in a changeset ({@code major}, {@code minor} or {@code patch}). */
+    /**
+     * The bump named in a changeset ({@code major}, {@code minor} or {@code patch}).
+     */
     public static Bump parse(String s) {
         return switch (s.strip().toLowerCase(java.util.Locale.ROOT)) {
             case "major" -> MAJOR;
@@ -14,7 +18,9 @@ public enum Bump {
         };
     }
 
-    /** The larger of two bumps. */
+    /**
+     * The larger of two bumps.
+     */
     public Bump max(Bump other) {
         return other.ordinal() > ordinal() ? other : this;
     }
@@ -43,7 +49,9 @@ public enum Bump {
         };
     }
 
-    /** The heading of this bump's section in a changelog. */
+    /**
+     * The heading of this bump's section in a changelog.
+     */
     public String heading() {
         return switch (this) {
             case MAJOR -> "Major Changes";

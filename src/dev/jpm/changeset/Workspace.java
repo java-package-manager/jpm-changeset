@@ -30,7 +30,9 @@ public record Workspace(Path root, List<Module> modules, java.util.Map<String, O
      */
     public record Module(String name, Path dir, String version, Path versionFile, List<String> dependsOn, boolean published) {}
 
-    /** The workspace of a project jpm loaded. */
+    /**
+     * The workspace of a project jpm loaded.
+     */
     public static Workspace of(dev.jpm.api.model.Project p) {
         List<Module> out = new ArrayList<>();
         Path rootManifest = p.dir().resolve("project.jsonc");
@@ -48,7 +50,9 @@ public record Workspace(Path root, List<Module> modules, java.util.Map<String, O
         return new Workspace(p.dir(), List.copyOf(out), settings);
     }
 
-    /** The groups of a setting ({@code "fixed"} or {@code "linked"}): lists of module names. */
+    /**
+     * The groups of a setting ({@code "fixed"} or {@code "linked"}): lists of module names.
+     */
     public List<List<String>> groups(String key) {
         List<List<String>> out = new ArrayList<>();
         Object v = settings.get(key);
@@ -61,13 +65,17 @@ public record Workspace(Path root, List<Module> modules, java.util.Map<String, O
         return out;
     }
 
-    /** The module named {@code name}, or null. */
+    /**
+     * The module named {@code name}, or null.
+     */
     public Module module(String name) {
         for (Module m : modules) if (m.name().equals(name)) return m;
         return null;
     }
 
-    /** The module whose folder holds {@code file} (the deepest one), or null. */
+    /**
+     * The module whose folder holds {@code file} (the deepest one), or null.
+     */
     public Module moduleOf(Path file) {
         Module best = null;
         Path f = file.toAbsolutePath().normalize();

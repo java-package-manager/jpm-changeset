@@ -110,7 +110,8 @@ default `origin/main`, else `main`) and no changeset releases it. It is also the
 ## Developing
 
 ```sh
-jpm test
+jpm check     # the checks (jpm-format's formatting and lint among them), then the tests, as CI runs them
+jpm format    # format the sources with jpm-format
 jpm build
 JPM_EXE=jpm JPM_PROJECT_DIR=/path/to/a/project jpm start -- status
 ```
