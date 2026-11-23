@@ -100,6 +100,16 @@ class ChangesetTest {
     }
 
     @Test
+    void parsesPublishOptions() {
+        assertEquals(new Main.PublishOptions(false, List.of("central")), Main.parsePublish(List.of("central"), Map.of()));
+        assertEquals(new Main.PublishOptions(true, List.of()), Main.parsePublish(List.of("--tag-only"), Map.of()));
+        assertEquals(new Main.PublishOptions(true, List.of()), Main.parsePublish(List.of(), Map.of("tagOnly", true)));
+        assertEquals(new Main.PublishOptions(false, List.of()), Main.parsePublish(List.of(), Map.of("tagOnly", false)));
+        assertThrows(ChangesetException.class, () -> Main.parsePublish(List.of("--tag-only", "central"), Map.of()));
+        assertThrows(ChangesetException.class, () -> Main.parsePublish(List.of(), Map.of("tagOnly", "yes")));
+    }
+
+    @Test
     void groupsReleaseTogether(@TempDir Path root) throws Exception {
         Workspace ws = workspace(root);
         Changeset core = Changeset.parse("a", "---\ncore: minor\n---\n\nAdd a cache.\n");
