@@ -62,7 +62,7 @@ final class Git {
     }
 
     void tag(String tag, String message) {
-        Result r = run("tag", "-a", tag, "-m", message);
+        Result r = run("tag", "-a", "--cleanup=verbatim", tag, "-m", message);
         if (r.exit() != 0) throw new ChangesetException("git could not create the tag " + tag + ": " + r.out().strip());
     }
 }

@@ -47,8 +47,9 @@ Add a cache for parsed manifests.
 
 Review and commit that, then `jpm changeset publish [jpm publish options]` runs
 [jpm-publish](https://github.com/java-package-manager/jpm-publish) for every module with a `"group"` whose
-version has no tag yet, and tags it: `1.3.0` in a project with one module, `core@1.3.0` in a workspace. Push
-the tags with `git push --follow-tags`.
+version has no tag yet, and tags it: `1.3.0` in a project with one module, `core@1.3.0` in a workspace. The
+tag's message is the module's name and version, then its `CHANGELOG.md` entry, so release notes can be made
+from it (changeset-action does). Push the tags with `git push --follow-tags`.
 
 A project whose release is its Git tag, such as a jpm extension (`jpm add` installs those from their Git
 source), needs no jpm publish: `jpm changeset publish --tag-only` only tags. To make that the project's

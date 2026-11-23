@@ -329,8 +329,9 @@ public final class Main {
             if (!m.published()) continue;
             String tag = ws.modules().size() == 1 ? m.version() : m.name() + "@" + m.version();
             if (git.tagExists(tag)) continue;
+            String message = tagMessage(m);
             if (o.tagOnly()) {
-                git.tag(tag, m.name() + " " + m.version());
+                git.tag(tag, message);
                 step("Tagged", tag);
                 published++;
                 continue;
@@ -349,13 +350,25 @@ public final class Main {
                 throw new ChangesetException("interrupted");
             }
             if (exit != 0) throw new ChangesetException("jpm publish failed for " + m.name() + " (exit " + exit + "); nothing was tagged for it");
-            git.tag(tag, m.name() + " " + m.version());
+            git.tag(tag, message);
             step("Tagged", tag);
             published++;
         }
         if (published == 0) info("Every published module's version is tagged already; nothing to publish.");
         else info("Push the tags with `git push --follow-tags`.");
         return 0;
+    }
+
+    /** The message of a module's release tag: {@code <name> <version>}, then its changelog entry, for release notes. */
+    static String tagMessage(Workspace.Module m) {
+        String subject = m.name() + " " + m.version();
+        Path file = m.dir().resolve("CHANGELOG.md");
+        try {
+            String changes = Files.exists(file) ? Plan.changesOf(Files.readString(file), m.version()) : null;
+            return changes == null ? subject : subject + "\n\n" + changes + "\n";
+        } catch (IOException e) {
+            throw new ChangesetException("could not read " + file + ": " + e.getMessage());
+        }
     }
 
     private static String names(Workspace ws) {
