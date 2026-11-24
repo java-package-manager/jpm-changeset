@@ -2,7 +2,6 @@
 
 Facts for AI agents working on jpm-changeset. jpm's own rules are in
 [jpm's AGENTS.md](https://github.com/java-package-manager/jpm/blob/main/AGENTS.md).
-What comes next is in [ROADMAP.md](ROADMAP.md).
 
 | What | Command |
 |---|---|
