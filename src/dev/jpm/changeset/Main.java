@@ -99,7 +99,8 @@ public final class Main {
         }
     }
 
-    record AddOptions(List<String> modules, Bump bump, String message, boolean empty) {}
+    record AddOptions(List<String> modules, Bump bump, String message, boolean empty) {
+    }
 
     static AddOptions parseAdd(List<String> args) {
         List<String> modules = new ArrayList<>();
@@ -112,7 +113,8 @@ public final class Main {
                 case "--module" -> modules.add(value(args, ++i, a));
                 case "--major", "--minor", "--patch" -> {
                     Bump b = Bump.parse(a.substring(2));
-                    if (bump != null && bump != b) throw new ChangesetException("choose one of --major, --minor and --patch");
+                    if (bump != null && bump != b)
+                        throw new ChangesetException("choose one of --major, --minor and --patch");
                     bump = b;
                 }
                 case "--message", "-m" -> message = value(args, ++i, a);
@@ -120,7 +122,8 @@ public final class Main {
                 default -> throw new ChangesetException("unknown option " + a + "; see jpm changeset --help");
             }
         }
-        if (empty && (!modules.isEmpty() || bump != null)) throw new ChangesetException("an --empty changeset names no modules and no bump");
+        if (empty && (!modules.isEmpty() || bump != null))
+            throw new ChangesetException("an --empty changeset names no modules and no bump");
         return new AddOptions(modules, bump, message, empty);
     }
 
@@ -138,13 +141,15 @@ public final class Main {
             List<String> modules = new ArrayList<>(o.modules());
             if (modules.isEmpty() && ws.modules().size() == 1) modules.add(ws.modules().get(0).name());
             if (modules.isEmpty()) {
-                if (console == null) throw new ChangesetException("name the modules that changed with --module (" + names(ws) + ")");
+                if (console == null)
+                    throw new ChangesetException("name the modules that changed with --module (" + names(ws) + ")");
                 String line = console.readLine("Which modules changed? (%s, separated by spaces): ", names(ws));
                 if (line != null) for (String n : line.trim().split("[\\s,]+")) if (!n.isBlank()) modules.add(n);
                 if (modules.isEmpty()) throw new ChangesetException("no module named");
             }
             for (String m : modules) {
-                if (ws.module(m) == null) throw new ChangesetException("\"" + m + "\" is not a module of this project (" + names(ws) + ")");
+                if (ws.module(m) == null)
+                    throw new ChangesetException("\"" + m + "\" is not a module of this project (" + names(ws) + ")");
             }
             Bump bump = o.bump();
             if (bump == null) {
@@ -174,12 +179,15 @@ public final class Main {
     }
 
     static int pre(Path root, List<String> args) {
-        if (args.isEmpty()) throw new ChangesetException("use `jpm changeset pre enter <tag>` or `jpm changeset pre exit`");
+        if (args.isEmpty())
+            throw new ChangesetException("use `jpm changeset pre enter <tag>` or `jpm changeset pre exit`");
         Pre pre = Pre.read(root);
         switch (args.get(0)) {
             case "enter" -> {
-                if (args.size() != 2 || !args.get(1).matches("[0-9A-Za-z-]+")) throw new ChangesetException("give the prerelease tag: `jpm changeset pre enter beta`");
-                if (pre != null && !pre.exiting()) throw new ChangesetException("already in prerelease mode (" + pre.tag() + "); `jpm changeset pre exit` first");
+                if (args.size() != 2 || !args.get(1).matches("[0-9A-Za-z-]+"))
+                    throw new ChangesetException("give the prerelease tag: `jpm changeset pre enter beta`");
+                if (pre != null && !pre.exiting())
+                    throw new ChangesetException("already in prerelease mode (" + pre.tag() + "); `jpm changeset pre exit` first");
                 Workspace ws = load(root);
                 Map<String, String> initial = new LinkedHashMap<>();
                 for (Workspace.Module m : ws.modules()) initial.put(m.name(), m.version());
@@ -211,7 +219,8 @@ public final class Main {
         List<Changeset> changesets = Changeset.readAll(root);
         Pre pre = Pre.read(root);
         Plan plan = Plan.of(ws, changesets, options(ws, pre));
-        if (pre != null) info(pre.exiting() ? "Leaving prerelease mode (" + pre.tag() + "): the next version is stable." : "Prerelease mode: " + pre.tag());
+        if (pre != null)
+            info(pre.exiting() ? "Leaving prerelease mode (" + pre.tag() + "): the next version is stable." : "Prerelease mode: " + pre.tag());
         if (changesets.isEmpty()) info("No changesets.");
         for (Changeset c : changesets) {
             info(Changeset.DIR + "/" + c.id() + ".md  " + (c.releases().isEmpty() ? "(empty)"
@@ -232,7 +241,8 @@ public final class Main {
         }
         Set<String> changed = new LinkedHashSet<>();
         for (Path f : git.changedSince(base)) {
-            if (f.startsWith(root.resolve(Changeset.DIR)) || f.getFileName().toString().equals("CHANGELOG.md")) continue;
+            if (f.startsWith(root.resolve(Changeset.DIR)) || f.getFileName().toString().equals("CHANGELOG.md"))
+                continue;
             Workspace.Module m = ws.moduleOf(f);
             if (m != null) changed.add(m.name());
         }
@@ -254,7 +264,8 @@ public final class Main {
             }
         }
         if (forJpm) write(Path.of(report), Jsonc.write(problems) + "\n");
-        if (problems.isEmpty()) step("Checked", changed.isEmpty() ? "nothing changed since " + base : "every changed module has a changeset");
+        if (problems.isEmpty())
+            step("Checked", changed.isEmpty() ? "nothing changed since " + base : "every changed module has a changeset");
         return problems.isEmpty() ? 0 : 1;
     }
 
@@ -269,7 +280,8 @@ public final class Main {
     }
 
     static int version(Path root, List<String> args) {
-        if (!args.isEmpty()) throw new ChangesetException("unknown option " + args.get(0) + "; see jpm changeset --help");
+        if (!args.isEmpty())
+            throw new ChangesetException("unknown option " + args.get(0) + "; see jpm changeset --help");
         Workspace ws = load(root);
         List<Changeset> changesets = Changeset.readAll(root);
         Pre pre = Pre.read(root);
@@ -282,7 +294,8 @@ public final class Main {
         Plan plan = Plan.of(ws, changesets, options(ws, pre));
         Set<Path> bumped = new LinkedHashSet<>();
         for (Plan.Release r : plan.releases().values()) {
-            if (bumped.add(r.module().versionFile())) write(r.module().versionFile(), Manifests.withVersion(read(r.module().versionFile()), r.newVersion()));
+            if (bumped.add(r.module().versionFile()))
+                write(r.module().versionFile(), Manifests.withVersion(read(r.module().versionFile()), r.newVersion()));
             Path changelog = r.module().dir().resolve("CHANGELOG.md");
             write(changelog, Plan.prepend(Files.exists(changelog) ? read(changelog) : null, r.module().name(), Plan.entry(r)));
             step("Bumped", r.module().name() + " " + r.module().version() + " -> " + r.newVersion());
@@ -322,15 +335,18 @@ public final class Main {
      * @param tagOnly     tag without running jpm publish: the tag is the release, as for jpm extensions
      * @param publishArgs the options passed on to jpm publish
      */
-    record PublishOptions(boolean tagOnly, List<String> publishArgs) {}
+    record PublishOptions(boolean tagOnly, List<String> publishArgs) {
+    }
 
     static PublishOptions parsePublish(List<String> args, Map<String, Object> settings) {
         List<String> rest = new ArrayList<>(args);
         boolean tagOnly = rest.remove("--tag-only");
         Object setting = settings.get("tagOnly");
-        if (setting != null && !(setting instanceof Boolean)) throw new ChangesetException(Workspace.FILE + ": \"tagOnly\" must be true or false");
+        if (setting != null && !(setting instanceof Boolean))
+            throw new ChangesetException(Workspace.FILE + ": \"tagOnly\" must be true or false");
         tagOnly |= Boolean.TRUE.equals(setting);
-        if (tagOnly && !rest.isEmpty()) throw new ChangesetException("--tag-only runs no jpm publish, so it takes no jpm publish options (" + String.join(" ", rest) + ")");
+        if (tagOnly && !rest.isEmpty())
+            throw new ChangesetException("--tag-only runs no jpm publish, so it takes no jpm publish options (" + String.join(" ", rest) + ")");
         return new PublishOptions(tagOnly, List.copyOf(rest));
     }
 
@@ -363,7 +379,8 @@ public final class Main {
                 Thread.currentThread().interrupt();
                 throw new ChangesetException("interrupted");
             }
-            if (exit != 0) throw new ChangesetException("jpm publish failed for " + m.name() + " (exit " + exit + "); nothing was tagged for it");
+            if (exit != 0)
+                throw new ChangesetException("jpm publish failed for " + m.name() + " (exit " + exit + "); nothing was tagged for it");
             git.tag(tag, message);
             step("Tagged", tag);
             published++;

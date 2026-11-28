@@ -34,7 +34,8 @@ public record Changeset(String id, Map<String, Bump> releases, String summary) {
      */
     public static Changeset parse(String id, String text) {
         String t = text.replace("\r\n", "\n");
-        if (!t.startsWith("---\n")) throw new ChangesetException(id + ".md: a changeset starts with a --- line, then a line per module");
+        if (!t.startsWith("---\n"))
+            throw new ChangesetException(id + ".md: a changeset starts with a --- line, then a line per module");
         int end = t.startsWith("---", 4) ? 4 : t.indexOf("\n---", 4) + 1;
         if (end <= 0) throw new ChangesetException(id + ".md: the front matter has no closing --- line");
         Map<String, Bump> releases = new LinkedHashMap<>();

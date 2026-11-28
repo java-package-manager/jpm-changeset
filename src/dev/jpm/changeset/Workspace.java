@@ -33,7 +33,9 @@ public record Workspace(Path root, List<Module> modules, java.util.Map<String, O
      * @param dependsOn   the workspace modules it depends on, by name
      * @param published   whether it is published (has a {@code "group"}), so {@code publish} releases it
      */
-    public record Module(String name, Path dir, String version, Path versionFile, List<String> dependsOn, boolean published) {}
+    public record Module(String name, Path dir, String version, Path versionFile, List<String> dependsOn,
+                         boolean published) {
+    }
 
     /**
      * The workspace of a project jpm loaded.
@@ -46,7 +48,8 @@ public record Workspace(Path root, List<Module> modules, java.util.Map<String, O
             Path versionFile = hasVersion(own) ? own : rootManifest;
             List<String> deps = new ArrayList<>();
             for (dev.jpm.api.model.Dependency d : m.dependencies()) {
-                if ("workspace".equals(d.kind()) && d.module() != null && !deps.contains(d.module())) deps.add(d.module());
+                if ("workspace".equals(d.kind()) && d.module() != null && !deps.contains(d.module()))
+                    deps.add(d.module());
             }
             out.add(new Module(m.name(), m.dir(), m.version(), versionFile, List.copyOf(deps), m.group() != null));
         }
@@ -76,9 +79,11 @@ public record Workspace(Path root, List<Module> modules, java.util.Map<String, O
         List<List<String>> out = new ArrayList<>();
         Object v = settings.get(key);
         if (v == null) return out;
-        if (!(v instanceof List<?> groups)) throw new ChangesetException(FILE + ": \"" + key + "\" must be a list of lists of module names");
+        if (!(v instanceof List<?> groups))
+            throw new ChangesetException(FILE + ": \"" + key + "\" must be a list of lists of module names");
         for (Object g : groups) {
-            if (!(g instanceof List<?> names)) throw new ChangesetException(FILE + ": \"" + key + "\" must be a list of lists of module names");
+            if (!(g instanceof List<?> names))
+                throw new ChangesetException(FILE + ": \"" + key + "\" must be a list of lists of module names");
             out.add(names.stream().map(String::valueOf).toList());
         }
         return out;
