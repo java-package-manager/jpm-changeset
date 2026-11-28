@@ -20,7 +20,8 @@ import java.util.Map;
  * @param released        the ids of the changesets already in a prerelease
  * @param counters        each module's number of prereleases so far (the {@code n} of {@code 1.3.0-beta.n})
  */
-public record Pre(boolean exiting, String tag, Map<String, String> initialVersions, List<String> released, Map<String, Integer> counters) {
+public record Pre(boolean exiting, String tag, Map<String, String> initialVersions, List<String> released,
+                  Map<String, Integer> counters) {
     public static final String FILE = "pre.json";
 
     /**
@@ -37,11 +38,13 @@ public record Pre(boolean exiting, String tag, Map<String, String> initialVersio
             throw new ChangesetException(Changeset.DIR + "/" + FILE + " is not prerelease state jpm changeset wrote: " + e.getMessage());
         }
         Map<String, String> initial = new LinkedHashMap<>();
-        if (m.get("initialVersions") instanceof Map<?, ?> iv) iv.forEach((k, v) -> initial.put(String.valueOf(k), String.valueOf(v)));
+        if (m.get("initialVersions") instanceof Map<?, ?> iv)
+            iv.forEach((k, v) -> initial.put(String.valueOf(k), String.valueOf(v)));
         List<String> released = new ArrayList<>();
         if (m.get("changesets") instanceof List<?> l) for (Object o : l) released.add(String.valueOf(o));
         Map<String, Integer> counters = new LinkedHashMap<>();
-        if (m.get("counters") instanceof Map<?, ?> c) c.forEach((k, v) -> counters.put(String.valueOf(k), v instanceof Number n ? n.intValue() : 0));
+        if (m.get("counters") instanceof Map<?, ?> c)
+            c.forEach((k, v) -> counters.put(String.valueOf(k), v instanceof Number n ? n.intValue() : 0));
         return new Pre("exit".equals(m.get("mode")), String.valueOf(m.get("tag")), initial, released, counters);
     }
 

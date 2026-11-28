@@ -18,7 +18,10 @@
       "changeset add": {
         "description": "Add a changeset: which modules changed, how much, and a summary",
         "options": {
-          "--module": { "argument": "name", "description": "A module that changed (repeatable); asked for when left out" },
+          "--module": {
+            "argument": "name",
+            "description": "A module that changed (repeatable); asked for when left out"
+          },
           "--major": { "description": "A breaking change" },
           "--minor": { "description": "A new feature" },
           "--patch": { "description": "A fix" },
@@ -29,7 +32,10 @@
       "changeset status": {
         "description": "List the pending changesets and the versions they give",
         "options": {
-          "--since": { "argument": "ref", "description": "The branch changes are compared with (default: origin/main, else main)" },
+          "--since": {
+            "argument": "ref",
+            "description": "The branch changes are compared with (default: origin/main, else main)"
+          },
           "--check": { "description": "Fail when a changed module has no changeset" }
         }
       },
@@ -40,7 +46,9 @@
           "--tag-only": { "description": "Only tag, without jpm publish (for projects released as Git tags)" }
         }
       },
-      "changeset pre enter": { "description": "Prerelease mode: version releases versions like 1.3.0-beta.0 and keeps the changesets" },
+      "changeset pre enter": {
+        "description": "Prerelease mode: version releases versions like 1.3.0-beta.0 and keeps the changesets"
+      },
       "changeset pre exit": { "description": "The next version releases the stable versions and ends prerelease mode" }
     },
     "checks": {
@@ -55,6 +63,6 @@
     "org.junit.jupiter:junit-jupiter": "5.11.4"
   },
   "extensions": {
-    "github:java-package-manager/jpm-format": "^0.4.0"
+    "github:java-package-manager/jpm-format": "^0.8.1"
   }
 }

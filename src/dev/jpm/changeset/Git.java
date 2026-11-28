@@ -16,7 +16,8 @@ final class Git {
         this.dir = dir;
     }
 
-    record Result(int exit, String out) {}
+    record Result(int exit, String out) {
+    }
 
     Result run(String... args) {
         List<String> cmd = new ArrayList<>(List.of("git"));
@@ -52,7 +53,8 @@ final class Git {
         List<Path> out = new ArrayList<>();
         for (String spec : new String[]{base + "...HEAD", null}) {
             Result r = spec == null ? run("status", "--porcelain", "--untracked-files=all") : run("diff", "--name-only", spec);
-            if (r.exit() != 0) throw new ChangesetException("git could not compare with " + base + ": " + r.out().strip());
+            if (r.exit() != 0)
+                throw new ChangesetException("git could not compare with " + base + ": " + r.out().strip());
             for (String line : r.out().split("\n")) {
                 if (line.isBlank()) continue;
                 String file = spec == null ? line.substring(3).replaceFirst("^.* -> ", "") : line;
