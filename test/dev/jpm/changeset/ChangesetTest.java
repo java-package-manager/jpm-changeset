@@ -60,6 +60,16 @@ class ChangesetTest {
     }
 
     @Test
+    void readsSettingsFromItsOwnFile(@TempDir Path root) throws Exception {
+        Files.writeString(root.resolve("jpm-changeset.jsonc"), """
+                { "fixed": [["core", "api"]], "tagOnly": true }
+                """);
+        Workspace ws = workspace(root);
+        assertEquals(List.of(List.of("core", "api")), ws.groups("fixed"));
+        assertEquals(new Main.PublishOptions(true, List.of()), Main.parsePublish(List.of(), ws.settings()));
+    }
+
+    @Test
     void plansReleases(@TempDir Path root) throws Exception {
         Workspace ws = workspace(root);
         assertEquals(root.resolve("project.jsonc"), ws.module("api").versionFile(), "api inherits the root's version");

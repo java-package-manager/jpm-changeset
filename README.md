@@ -53,11 +53,11 @@ from it (changeset-action does). Push the tags with `git push --follow-tags`.
 
 A project whose release is its Git tag, such as a jpm extension (`jpm add` installs those from their Git
 source), needs no jpm publish: `jpm changeset publish --tag-only` only tags. To make that the project's
-default, so `jpm changeset publish` and changeset-action's `publish: true` tag only, set it in the root
-`project.jsonc`:
+default, so `jpm changeset publish` and changeset-action's `publish: true` tag only, set it in
+`jpm-changeset.jsonc` next to the root `project.jsonc`:
 
 ```jsonc
-"extensions": { "changeset": { "tagOnly": true } }
+{ "tagOnly": true }
 ```
 
 ### In GitHub Actions
@@ -83,14 +83,12 @@ since prerelease mode began, and deletes the changesets. The state is in `.chang
 
 ## Groups
 
-In the root `project.jsonc`:
+In `jpm-changeset.jsonc`, next to the root `project.jsonc`:
 
 ```jsonc
-"extensions": {
-  "changeset": {
-    "fixed": [["core", "api"]],      // always released together, at one version
-    "linked": [["web", "admin"]]     // the ones that are released share the highest new version
-  }
+{
+  "fixed": [["core", "api"]],      // always released together, at one version
+  "linked": [["web", "admin"]]     // the ones that are released share the highest new version
 }
 ```
 

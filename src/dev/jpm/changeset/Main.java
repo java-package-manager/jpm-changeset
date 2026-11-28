@@ -46,10 +46,10 @@ public final class Main {
                                       Prerelease mode: version releases 1.3.0-<tag>.0, .1, ... and keeps the changesets
               jpm changeset pre exit  The next version releases the stable versions and ends prerelease mode
 
-            Groups, in the root project.jsonc: "extensions": { "changeset": {
+            Settings, in jpm-changeset.jsonc next to the root project.jsonc: {
               "fixed": [["core", "api"]],    always released together, at one version
               "linked": [["web", "admin"]],  those that are released share the highest new version
-              "tagOnly": true                publish only tags, as --tag-only does } }
+              "tagOnly": true                publish only tags, as --tag-only does }
             """;
 
     private Main() {
@@ -328,7 +328,7 @@ public final class Main {
         List<String> rest = new ArrayList<>(args);
         boolean tagOnly = rest.remove("--tag-only");
         Object setting = settings.get("tagOnly");
-        if (setting != null && !(setting instanceof Boolean)) throw new ChangesetException("extensions.changeset.tagOnly must be true or false");
+        if (setting != null && !(setting instanceof Boolean)) throw new ChangesetException(Workspace.FILE + ": \"tagOnly\" must be true or false");
         tagOnly |= Boolean.TRUE.equals(setting);
         if (tagOnly && !rest.isEmpty()) throw new ChangesetException("--tag-only runs no jpm publish, so it takes no jpm publish options (" + String.join(" ", rest) + ")");
         return new PublishOptions(tagOnly, List.copyOf(rest));
