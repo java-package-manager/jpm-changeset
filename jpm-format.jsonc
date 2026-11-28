@@ -1,0 +1,4 @@
+// no // or /* */ comments: decisions go into documents, explanations into Javadoc
+{
+  "linter": { "rules": { "style": { "NonJavadocComment": "error" } } }
+}

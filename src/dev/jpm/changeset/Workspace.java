@@ -15,9 +15,14 @@ import java.util.List;
  *
  * @param root     the project's folder
  * @param modules  its modules, in jpm's build order
- * @param settings the root's {@code "extensions": { "changeset": { ... } }}
+ * @param settings the settings in the root's {@value #FILE}
  */
 public record Workspace(Path root, List<Module> modules, java.util.Map<String, Object> settings) {
+    /**
+     * The settings file, in the project's root folder.
+     */
+    public static final String FILE = "jpm-changeset.jsonc";
+
     /**
      * A module.
      *
@@ -45,9 +50,23 @@ public record Workspace(Path root, List<Module> modules, java.util.Map<String, O
             }
             out.add(new Module(m.name(), m.dir(), m.version(), versionFile, List.copyOf(deps), m.group() != null));
         }
+        return new Workspace(p.dir(), List.copyOf(out), settings(p.dir().resolve(FILE)));
+    }
+
+    private static java.util.Map<String, Object> settings(Path file) {
         java.util.Map<String, Object> settings = new java.util.LinkedHashMap<>();
-        if (p.extensions().get("changeset") instanceof java.util.Map<?, ?> s) s.forEach((k, v) -> settings.put(String.valueOf(k), v));
-        return new Workspace(p.dir(), List.copyOf(out), settings);
+        if (!Files.isRegularFile(file)) return settings;
+        Object value;
+        try {
+            value = Jsonc.parse(Files.readString(file));
+        } catch (IOException e) {
+            throw new ChangesetException("Cannot read " + file + ": " + e.getMessage());
+        } catch (Jsonc.ParseException e) {
+            throw new ChangesetException(file + ": " + e.getMessage());
+        }
+        if (!(value instanceof java.util.Map<?, ?> s)) throw new ChangesetException(file + ": must be an object");
+        s.forEach((k, v) -> settings.put(String.valueOf(k), v));
+        return settings;
     }
 
     /**
@@ -57,9 +76,9 @@ public record Workspace(Path root, List<Module> modules, java.util.Map<String, O
         List<List<String>> out = new ArrayList<>();
         Object v = settings.get(key);
         if (v == null) return out;
-        if (!(v instanceof List<?> groups)) throw new ChangesetException("extensions.changeset." + key + " must be a list of lists of module names");
+        if (!(v instanceof List<?> groups)) throw new ChangesetException(FILE + ": \"" + key + "\" must be a list of lists of module names");
         for (Object g : groups) {
-            if (!(g instanceof List<?> names)) throw new ChangesetException("extensions.changeset." + key + " must be a list of lists of module names");
+            if (!(g instanceof List<?> names)) throw new ChangesetException(FILE + ": \"" + key + "\" must be a list of lists of module names");
             out.add(names.stream().map(String::valueOf).toList());
         }
         return out;
